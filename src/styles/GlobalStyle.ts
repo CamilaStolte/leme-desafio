@@ -1,32 +1,21 @@
 import { createGlobalStyle } from 'styled-components';
-import type { DefaultTheme } from 'styled-components';
 
-export const GlobalStyle = createGlobalStyle<{ theme: DefaultTheme }>`
-  body {
+export const GlobalStyle = createGlobalStyle`
+  *, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
+  }
+  body {
     background: ${({ theme }) => theme.colors.background};
     color: ${({ theme }) => theme.colors.text};
-    font-family: ${({ theme }) => theme.font.family};
-    font-size: ${({ theme }) => theme.font.size};
+    font-family: 'Inter', Arial, sans-serif;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: ${({ theme }) => theme.font.weight.bold};
-    margin: 0;
-  }
-  p {
-    color: ${({ theme }) => theme.colors.textSecondary};
-    margin-top: 0.5rem;
-    margin-bottom: 1.5rem;
-  }
-  button, input, select, textarea {
+  button {
     font-family: inherit;
-    font-size: inherit;
+    cursor: pointer;
   }
 `; 

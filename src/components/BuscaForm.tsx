@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { InputMask } from 'primereact/inputmask';
-import { InputText } from 'primereact/inputtext';
-import { Dropdown } from 'primereact/dropdown';
-import { Button } from 'primereact/button';
 import * as z from 'zod';
-import styled from 'styled-components';
-import type { TipoBusca } from '../api/mockApi';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import { InputMask } from 'primereact/inputmask';
 
 const tiposBusca = [
   { label: 'CPF', value: 'cpf' },
@@ -18,104 +17,113 @@ const tiposBusca = [
   { label: 'Nome', value: 'nome' },
 ];
 
-type FormValues = {
-  tipo: TipoBusca;
-  termo: string;
-};
-
-const maskMap: Record<TipoBusca, string | undefined> = {
+const mascaraPorTipo: Record<string, string | undefined> = {
   cpf: '999.999.999-99',
   cnpj: '99.999.999/9999-99',
   telefone: '(99) 99999-9999',
-  email: undefined,
-  endereco: undefined,
-  nome: undefined,
 };
 
-const schemaMap: Record<TipoBusca, z.ZodTypeAny> = {
-  cpf: z.string().min(14, 'CPF inválido').max(14, 'CPF inválido'),
-  cnpj: z.string().min(18, 'CNPJ inválido').max(18, 'CNPJ inválido'),
-  telefone: z.string().min(15, 'Telefone inválido').max(15, 'Telefone inválido'),
-  email: z.string().email('E-mail inválido'),
-  endereco: z.string().min(3, 'Endereço obrigatório'),
-  nome: z.string().min(3, 'Nome obrigatório'),
+const schemaPorTipo = {
+  cpf: z.object({ tipo: z.literal('cpf'), valor: z.string().min(14, 'CPF inválido') }),
+  cnpj: z.object({ tipo: z.literal('cnpj'), valor: z.string().min(18, 'CNPJ inválido') }),
+  email: z.object({ tipo: z.literal('email'), valor: z.string().email('E-mail inválido') }),
+  telefone: z.object({ tipo: z.literal('telefone'), valor: z.string().min(15, 'Telefone inválido') }),
+  endereco: z.object({ tipo: z.literal('endereco'), valor: z.string().min(3, 'Endereço obrigatório') }),
+  nome: z.object({ tipo: z.literal('nome'), valor: z.string().min(3, 'Nome obrigatório') }),
 };
 
-const Wrapper = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 400px;
-  margin: 0 auto;
-`;
+const FormSchema = z.discriminatedUnion('tipo', [
+  schemaPorTipo.cpf,
+  schemaPorTipo.cnpj,
+  schemaPorTipo.email,
+  schemaPorTipo.telefone,
+  schemaPorTipo.endereco,
+  schemaPorTipo.nome,
+]);
+type FormType = z.infer<typeof FormSchema>;
 
-interface BuscaFormProps {
-  onSubmit: (data: FormValues) => void;
-}
-
-export const BuscaForm: React.FC<BuscaFormProps> = ({ onSubmit }) => {
-  const [tipo, setTipo] = useState<TipoBusca>('cpf');
-  const schema = React.useMemo(() => z.object({
-    tipo: z.enum(['cpf', 'cnpj', 'email', 'telefone', 'endereco', 'nome']),
-    termo: schemaMap[tipo],
-  }), [tipo]);
-
+export function BuscaForm({ onSubmit }: { onSubmit?: (data: any) => void }) {
+  const [tipo, setTipo] = React.useState<FormType['tipo']>('cpf');
+  const schema = schemaPorTipo[tipo as keyof typeof schemaPorTipo];
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
     reset,
-  } = useForm({
+  } = useForm<FormType>({
     resolver: zodResolver(schema),
-    defaultValues: { tipo: 'cpf', termo: '' },
+    mode: 'onChange',
+    defaultValues: { tipo: 'cpf', valor: '' },
   });
 
-  const handleTipoChange = (e: { value: TipoBusca }) => {
-    setTipo(e.value);
-    reset({ tipo: e.value, termo: '' });
-  };
+  React.useEffect(() => {
+    reset({ tipo, valor: '' });
+  }, [tipo, reset]);
 
   return (
-    <Wrapper onSubmit={handleSubmit((data) => onSubmit(data as FormValues))}>
-      <Controller
-        name="tipo"
-        control={control}
-        render={({ field }) => (
-          <Dropdown
-            {...field}
-            options={tiposBusca}
-            value={tipo}
-            onChange={handleTipoChange}
-            placeholder="Selecione o tipo de busca"
+    <Box component="form" onSubmit={handleSubmit(onSubmit || (() => {}))} noValidate>
+      <Box display="flex" gap={2} flexWrap="wrap">
+        <Box flex="1 1 120px" minWidth={120}>
+          <Controller
+            name="tipo"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Tipo"
+                fullWidth
+                {...field}
+                value={tipo}
+                onChange={e => setTipo(e.target.value as FormType['tipo'])}
+                size="small"
+              >
+                {tiposBusca.map(option => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           />
-        )}
-      />
-      <Controller
-        name="termo"
-        control={control}
-        render={({ field }) =>
-          maskMap[tipo] ? (
-            <InputMask
-              {...field}
-              value={String(field.value ?? '')}
-              mask={maskMap[tipo]}
-              placeholder={tiposBusca.find((t) => t.value === tipo)?.label}
-              className={errors.termo ? 'p-invalid' : ''}
-            />
-          ) : (
-            <InputText
-              {...field}
-              value={String(field.value ?? '')}
-              placeholder={tiposBusca.find((t) => t.value === tipo)?.label}
-              className={errors.termo ? 'p-invalid' : ''}
-            />
-          )
-        }
-      />
-      {errors.termo && (
-        <span style={{ color: 'red', fontSize: 12 }}>{errors.termo.message as string}</span>
-      )}
-      <Button type="submit" label="Pesquisar" />
-    </Wrapper>
+        </Box>
+        <Box flex="2 1 200px" minWidth={180}>
+          <Controller
+            name="valor"
+            control={control}
+            render={({ field }) =>
+              tipo === 'cpf' || tipo === 'cnpj' || tipo === 'telefone' ? (
+                <InputMask
+                  {...field}
+                  mask={mascaraPorTipo[tipo] || ''}
+                  placeholder={tiposBusca.find(t => t.value === tipo)?.label}
+                  className={errors.valor ? 'p-invalid' : ''}
+                  autoClear={false}
+                  onChange={e => field.onChange(e.value)}
+                />
+              ) : (
+                <TextField
+                  {...field}
+                  label={tiposBusca.find(t => t.value === tipo)?.label}
+                  fullWidth
+                  size="small"
+                  error={!!errors.valor}
+                  helperText={errors.valor?.message as string}
+                />
+              )
+            }
+          />
+          {errors.valor && (
+            <Box mt={0.5} color="error.main" fontSize={13}>
+              {errors.valor.message as string}
+            </Box>
+          )}
+        </Box>
+      </Box>
+      <Box mt={2}>
+        <Button type="submit" variant="contained" color="primary" fullWidth disabled={!isValid}>
+          Pesquisar
+        </Button>
+      </Box>
+    </Box>
   );
-}; 
+} 
