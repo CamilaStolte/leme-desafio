@@ -17,7 +17,7 @@ export type Endereco = {
 
 export type PessoaFisica = {
   id: string;
-  tipo: 'PF';
+  tipo: "PF";
   nome: string;
   cpf: string;
   sexo: string;
@@ -35,7 +35,7 @@ export type Socio = {
 
 export type PessoaJuridica = {
   id: string;
-  tipo: 'PJ';
+  tipo: "PJ";
   nome: string;
   cnpj: string;
   capitalSocial: string;
