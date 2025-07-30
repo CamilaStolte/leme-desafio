@@ -25,14 +25,32 @@ const mascaraPorTipo: Record<string, string | undefined> = {
   telefone: "(99) 99999-9999",
 };
 
+const validateCPF = (cpf: string) => {
+  const cleanCPF = cpf.replace(/\D/g, "");
+  if (cleanCPF.length !== 11) return false;
+  return true;
+};
+
+const validateCNPJ = (cnpj: string) => {
+  const cleanCNPJ = cnpj.replace(/\D/g, "");
+  if (cleanCNPJ.length !== 14) return false;
+  return true;
+};
+
 const schemaPorTipo = {
   cpf: z.object({
     tipo: z.literal("cpf"),
-    valor: z.string().min(14, "CPF inválido"),
+    valor: z
+      .string()
+      .min(14, "CPF deve ter 11 dígitos")
+      .refine((val) => validateCPF(val), "CPF inválido"),
   }),
   cnpj: z.object({
     tipo: z.literal("cnpj"),
-    valor: z.string().min(18, "CNPJ inválido"),
+    valor: z
+      .string()
+      .min(18, "CNPJ deve ter 14 dígitos")
+      .refine((val) => validateCNPJ(val), "CNPJ inválido"),
   }),
   email: z.object({
     tipo: z.literal("email"),
@@ -62,8 +80,10 @@ type FormType =
 
 export function BuscaForm({
   onSubmit,
+  isLoading,
 }: {
   onSubmit?: (data: FormType) => void;
+  isLoading?: boolean;
 }) {
   const [tipo, setTipo] = React.useState<FormType["tipo"]>("cpf");
   const schema = schemaPorTipo[tipo as keyof typeof schemaPorTipo];
@@ -113,11 +133,7 @@ export function BuscaForm({
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as FormType["tipo"])}
                 size="medium"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               >
                 {tiposBusca.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -154,7 +170,7 @@ export function BuscaForm({
                     }`}
                     className={errors.valor ? "p-invalid" : ""}
                     autoClear={false}
-                    onChange={(e) => field.onChange(e.value)}
+                    onChange={(e) => field.onChange(e.value || "")}
                     style={{
                       width: "100%",
                       padding: "16px 14px",
@@ -176,11 +192,7 @@ export function BuscaForm({
                   size="medium"
                   error={!!errors.valor}
                   helperText={errors.valor?.message as string}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                    },
-                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               )
             }
@@ -190,7 +202,7 @@ export function BuscaForm({
             type="submit"
             variant="contained"
             color="primary"
-            disabled={!isValid}
+            disabled={!isValid || isLoading}
             size="large"
             sx={{
               px: 4,
@@ -201,7 +213,7 @@ export function BuscaForm({
               minHeight: "56px",
             }}
           >
-            Pesquisar
+            {isLoading ? "Pesquisando..." : "Pesquisar"}
           </Button>
         </Box>
 

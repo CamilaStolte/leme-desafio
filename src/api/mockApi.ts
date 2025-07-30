@@ -27,6 +27,48 @@ const entidades: Entidade[] = [
   },
   {
     id: "2",
+    tipo: "PF",
+    nome: "João Santos",
+    cpf: "123.789.456-01",
+    sexo: "Masculino",
+    dataNascimento: "1985-03-15",
+    nomeMae: "Ana Santos",
+    telefones: [{ tipo: "Celular", numero: "(11) 98765-4321" }],
+    emails: ["joao@lemeforense.com.br"],
+    enderecos: [
+      {
+        logradouro: "Av. Brasil",
+        numero: "456",
+        bairro: "Jardins",
+        cidade: "São Paulo",
+        estado: "SP",
+        cep: "01430-000",
+      },
+    ],
+  },
+  {
+    id: "3",
+    tipo: "PF",
+    nome: "Maria Oliveira",
+    cpf: "456.789.123-10",
+    sexo: "Feminino",
+    dataNascimento: "1992-07-20",
+    nomeMae: "Clara Oliveira",
+    telefones: [{ tipo: "Celular", numero: "(21) 91234-5678" }],
+    emails: ["maria@gmail.com"],
+    enderecos: [
+      {
+        logradouro: "Rua das Acácias",
+        numero: "789",
+        bairro: "Copacabana",
+        cidade: "Rio de Janeiro",
+        estado: "RJ",
+        cep: "22051-000",
+      },
+    ],
+  },
+  {
+    id: "4",
     tipo: "PJ",
     nome: "Empresa Exemplo Ltda",
     cnpj: "12.345.678/0001-99",
@@ -51,6 +93,29 @@ const entidades: Entidade[] = [
       { nome: "Ana Lima", cpf: "654.321.987-00" },
     ],
   },
+  {
+    id: "5",
+    tipo: "PJ",
+    nome: "Comércio ABC Ltda",
+    cnpj: "98.765.432/0001-10",
+    capitalSocial: "R$ 50.000,00",
+    dataInicioAtividades: "2015-08-01",
+    situacaoCadastral: "Ativa",
+    cnaePrincipal: "47.11-3-02",
+    telefones: [{ tipo: "Comercial", numero: "(21) 4003-1234" }],
+    emails: ["vendas@abc.com.br"],
+    enderecos: [
+      {
+        logradouro: "Rua do Comércio",
+        numero: "200",
+        bairro: "Centro",
+        cidade: "Rio de Janeiro",
+        estado: "RJ",
+        cep: "20040-000",
+      },
+    ],
+    quadroSocietario: [{ nome: "Pedro Almeida", cpf: "123.123.123-00" }],
+  },
 ];
 
 export type TipoBusca =
@@ -60,6 +125,16 @@ export type TipoBusca =
   | "telefone"
   | "endereco"
   | "nome";
+
+function simulatePartialMatch(term: string, value: string): boolean {
+  const cleanTerm = term.replace(/[.-/]/g, "");
+  const cleanValue = value.replace(/[.-/]/g, "");
+  let matchCount = 0;
+  for (let i = 0; i < cleanTerm.length && i < cleanValue.length; i++) {
+    if (cleanTerm[i] === cleanValue[i]) matchCount++;
+  }
+  return matchCount >= cleanTerm.length * 0.5;
+}
 
 export async function buscarEntidades(
   tipo: TipoBusca,
@@ -72,15 +147,29 @@ export async function buscarEntidades(
   return entidades.filter((entidade) => {
     switch (tipo) {
       case "cpf":
-        return entidade.tipo === "PF" && entidade.cpf.includes(termo);
-      case "cnpj":
-        return entidade.tipo === "PJ" && entidade.cnpj?.includes(termo);
-      case "email":
-        return entidade.emails.some((email) =>
-          email.toLowerCase().includes(termoLower)
+        return (
+          entidade.tipo === "PF" &&
+          (entidade.cpf === termo || simulatePartialMatch(termo, entidade.cpf))
         );
+      case "cnpj":
+        return (
+          entidade.tipo === "PJ" &&
+          (entidade.cnpj === termo ||
+            simulatePartialMatch(termo, entidade.cnpj))
+        );
+      case "email":
+        return entidade.emails.some((email) => {
+          const emailLower = email.toLowerCase();
+          return (
+            emailLower === termoLower ||
+            emailLower.includes(termoLower) ||
+            emailLower.split("@")[1] === termoLower.split("@")[1]
+          );
+        });
       case "telefone":
-        return entidade.telefones.some((tel) => tel.numero.includes(termo));
+        return entidade.telefones.some((tel) =>
+          tel.numero.replace(/\D/g, "").includes(termo.replace(/\D/g, ""))
+        );
       case "endereco":
         return entidade.enderecos.some((end) =>
           Object.values(end).some((v) => v.toLowerCase().includes(termoLower))

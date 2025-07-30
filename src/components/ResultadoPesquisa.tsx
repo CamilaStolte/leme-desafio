@@ -64,7 +64,6 @@ export function ResultadoPesquisa({
         }}
       />
       <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, height: "calc(100% - 16px)" }}>
-        {/* Header */}
         <Box
           sx={{
             display: "flex",
@@ -99,7 +98,6 @@ export function ResultadoPesquisa({
           />
         </Box>
 
-        {/* Filtros */}
         <Paper
           elevation={1}
           sx={{ p: { xs: 2, sm: 3 }, mb: 4, borderRadius: 2 }}
@@ -160,7 +158,6 @@ export function ResultadoPesquisa({
           </Box>
         </Paper>
 
-        {/* Resultados */}
         <Box sx={{ flex: 1, minHeight: 0 }}>
           {resultadosFiltrados.length === 0 ? (
             <Box
