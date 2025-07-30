@@ -12,38 +12,23 @@ import { DetalhesModal } from "./components/DetalhesModal";
 import { ResultadosRecentes } from "./components/ResultadosRecentes";
 import { ResultadoPesquisa } from "./components/ResultadoPesquisa";
 import { buscarEntidades } from "./api/mockApi";
+import type { TipoBusca } from "./api/mockApi";
+import { useMutation } from "@tanstack/react-query";
 
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#27465E",
-    },
-    secondary: {
-      main: "#F9B233",
-    },
-    background: {
-      default: "#F5F7FA",
-      paper: "#fff",
-    },
-    text: {
-      primary: "#333",
-    },
+    primary: { main: "#27465E" },
+    secondary: { main: "#F9B233" },
+    background: { default: "#F5F7FA", paper: "#fff" },
+    text: { primary: "#333" },
   },
-  shape: {
-    borderRadius: 8,
-  },
+  shape: { borderRadius: 8 },
   breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 960,
-      lg: 1280,
-      xl: 1920,
-    },
+    values: { xs: 0, sm: 600, md: 960, lg: 1280, xl: 1920 },
   },
 });
 
-type Tela = "consulta" | "resultado" | "detalhes";
+type Tela = "consulta" | "resultado";
 
 type ResultadoPesquisa = {
   id: number;
@@ -74,16 +59,40 @@ function App() {
   const [resultadosPesquisa, setResultadosPesquisa] = React.useState<
     ResultadoPesquisa[]
   >([]);
+  const [resultadosRecentes, setResultadosRecentes] = React.useState<
+    ResultadoRecente[]
+  >([]);
 
-  const handleBuscaSubmit = async (data: { tipo: string; valor: string }) => {
-    console.log("Busca realizada:", data);
+  const addResultadoRecente = (
+    entidade: import("./types/entities").Entidade
+  ) => {
+    const novoResultado: ResultadoRecente = {
+      id: resultadosRecentes.length + 1,
+      tipo: entidade.tipo === "PF" ? "pf" : "pj",
+      nome: entidade.nome,
+      documento: entidade.tipo === "PF" ? entidade.cpf : entidade.cnpj,
+      dataConsulta: new Date().toLocaleDateString("pt-BR"),
+      avatar: entidade.nome
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase(),
+    };
+    setResultadosRecentes((prev) => {
+      const novos = [
+        novoResultado,
+        ...prev.filter((r) => r.documento !== novoResultado.documento),
+      ];
+      return novos.slice(0, 10);
+    });
+  };
 
-    try {
-      const entidades = await buscarEntidades(
-        data.tipo as import("./api/mockApi").TipoBusca,
-        data.valor
-      );
-
+  const { mutate: realizarBusca, isPending: isLoading } = useMutation({
+    mutationFn: async ({ tipo, valor }: { tipo: TipoBusca; valor: string }) => {
+      const entidades = await buscarEntidades(tipo, valor);
+      return entidades;
+    },
+    onSuccess: (entidades: import("./types/entities").Entidade[]) => {
       const resultados: ResultadoPesquisa[] = entidades.map(
         (entidade, index) => {
           const telefone = entidade.telefones[0]?.numero || "N/A";
@@ -91,7 +100,6 @@ function App() {
           const endereco = entidade.enderecos[0]
             ? `${entidade.enderecos[0].logradouro}, ${entidade.enderecos[0].numero}, ${entidade.enderecos[0].cidade}`
             : "N/A";
-
           return {
             id: index + 1,
             tipo: entidade.tipo === "PF" ? "pf" : "pj",
@@ -108,80 +116,36 @@ function App() {
           };
         }
       );
-
       setResultadosPesquisa(resultados);
+      entidades.forEach(addResultadoRecente);
       setTelaAtual("resultado");
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       console.error("Erro na busca:", error);
       setResultadosPesquisa([]);
       setTelaAtual("resultado");
-    }
+    },
+  });
+
+  const handleBuscaSubmit = (data: { tipo: string; valor: string }) => {
+    realizarBusca({ tipo: data.tipo as TipoBusca, valor: data.valor });
   };
 
-  const handleVerDetalhes = (row: ResultadoPesquisa | ResultadoRecente) => {
-    // Para simplificar, vamos usar dados mockados para o modal
-    // Em uma implementação real, você buscaria os dados completos da entidade
-    if (row.tipo === "pf") {
-      setEntidadeSelecionada({
-        id: "1",
-        tipo: "PF",
-        nome: row.nome,
-        cpf: "documento" in row ? row.documento : "",
-        sexo: "Masculino",
-        dataNascimento: "1990-01-01",
-        nomeMae: "Maria Silva",
-        telefones: [
-          {
-            tipo: "Celular",
-            numero: "telefone" in row ? row.telefone : "(11) 99999-9999",
-          },
-        ],
-        emails: "email" in row ? [row.email] : ["lucas@email.com"],
-        enderecos: [
-          {
-            logradouro: "Rua das Flores",
-            numero: "123",
-            bairro: "Centro",
-            cidade: "São Paulo",
-            estado: "SP",
-            cep: "01001-000",
-          },
-        ],
-      });
-    } else {
-      setEntidadeSelecionada({
-        id: "2",
-        tipo: "PJ",
-        nome: row.nome,
-        cnpj: "documento" in row ? row.documento : "",
-        capitalSocial: "R$ 100.000,00",
-        dataInicioAtividades: "2010-05-10",
-        situacaoCadastral: "Ativa",
-        cnaePrincipal: "62.01-5-01",
-        telefones: [
-          {
-            tipo: "Comercial",
-            numero: "telefone" in row ? row.telefone : "(11) 98888-8888",
-          },
-        ],
-        emails: "email" in row ? [row.email] : ["contato@empresa.com"],
-        enderecos: [
-          {
-            logradouro: "Av. Paulista",
-            numero: "1000",
-            bairro: "Bela Vista",
-            cidade: "São Paulo",
-            estado: "SP",
-            cep: "01310-100",
-          },
-        ],
-        quadroSocietario: [
-          { nome: "João Souza", cpf: "987.654.321-00" },
-          { nome: "Ana Lima", cpf: "654.321.987-00" },
-        ],
-      });
+  const handleVerDetalhes = async (
+    row: ResultadoPesquisa | ResultadoRecente
+  ) => {
+    const entidades = await buscarEntidades(
+      row.tipo === "pf" ? "cpf" : "cnpj",
+      row.documento
+    );
+    const entidade = entidades.find(
+      (e) => (e.tipo === "PF" ? e.cpf : e.cnpj) === row.documento
+    );
+    if (entidade) {
+      setEntidadeSelecionada(entidade);
+      addResultadoRecente(entidade);
+      setModalOpen(true);
     }
-    setModalOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -206,21 +170,9 @@ function App() {
           alignItems: "center",
         }}
       >
-        <Box
-          sx={{
-            width: "100%",
-            maxWidth: "1400px",
-            mx: "auto",
-          }}
-        >
+        <Box sx={{ width: "100%", maxWidth: "1400px", mx: "auto" }}>
           {telaAtual === "consulta" && (
-            <Box
-              sx={{
-                flex: 1,
-                p: { xs: 2, sm: 3, md: 4 },
-                width: "100%",
-              }}
-            >
+            <Box sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 }, width: "100%" }}>
               <Paper
                 elevation={3}
                 sx={{
@@ -246,7 +198,6 @@ function App() {
                     flexDirection: "column",
                   }}
                 >
-                  {/* Header */}
                   <Box sx={{ mb: 4, textAlign: "center" }}>
                     <Typography
                       variant="h3"
@@ -271,8 +222,6 @@ function App() {
                       Encontre as informações essenciais de seus investigados
                     </Typography>
                   </Box>
-
-                  {/* Content Grid */}
                   <Box
                     sx={{
                       flex: 1,
@@ -282,29 +231,25 @@ function App() {
                       alignItems: "start",
                     }}
                   >
-                    {/* Form Section */}
                     <Box>
-                      <BuscaForm onSubmit={handleBuscaSubmit} />
+                      <BuscaForm
+                        onSubmit={handleBuscaSubmit}
+                        isLoading={isLoading}
+                      />
                     </Box>
-
-                    {/* Recent Results Section */}
                     <Box>
-                      <ResultadosRecentes onVerDetalhes={handleVerDetalhes} />
+                      <ResultadosRecentes
+                        resultados={resultadosRecentes}
+                        onVerDetalhes={handleVerDetalhes}
+                      />
                     </Box>
                   </Box>
                 </Box>
               </Paper>
             </Box>
           )}
-
           {telaAtual === "resultado" && (
-            <Box
-              sx={{
-                flex: 1,
-                p: { xs: 2, sm: 3, md: 4 },
-                width: "100%",
-              }}
-            >
+            <Box sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 }, width: "100%" }}>
               <ResultadoPesquisa
                 resultados={resultadosPesquisa}
                 onVerDetalhes={handleVerDetalhes}
