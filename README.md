@@ -68,8 +68,8 @@ Um dashboard moderno e responsivo para busca e exibição de dados públicos de 
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/consulta-dados-basicos.git
-cd consulta-dados-basicos
+git clone https://github.com/seu-usuario/leme-desafio.git
+cd leme-desafio
 ```
 
 2. **Instale as dependências**
