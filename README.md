@@ -141,22 +141,7 @@ src/
     └── entities.ts            # Tipos TypeScript
 ```
 
-## 🚀 Deploy
-
-Para fazer o deploy do projeto:
-
-1. **Gere a build de produção**
-```bash
-npm run build
-```
-
-2. **Os arquivos estarão na pasta `dist/`**
-3. **Faça upload dos arquivos para seu servidor web**
 
 ## 📄 Licença
 
 Este projeto foi desenvolvido como parte do desafio técnico para a Leme Forense.
-
-## 👨‍💻 Desenvolvedor
-
-Desenvolvido com ❤️ seguindo as melhores práticas de desenvolvimento React e TypeScript.
