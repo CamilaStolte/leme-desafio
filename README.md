@@ -143,18 +143,7 @@ A aplicação possui dados mockados para demonstração. Você pode testar com o
 - `Jardins`
 - `Copacabana`
 
-## 📁 Estrutura do Projeto
 
-```
-src/
-├── components/          # Componentes React
-├── types/              # Definições de tipos TypeScript
-├── services/           # Funções de API e serviços
-├── hooks/              # Custom hooks
-├── utils/              # Funções utilitárias
-├── styles/             # Arquivos de estilo
-└── __tests__/          # Testes unitários
-```
 
 ## 🎨 Design System
 
@@ -164,15 +153,3 @@ O projeto utiliza uma paleta de cores moderna e componentes consistentes:
 - **Tipografia**: Sistema de fontes hierárquico
 - **Espaçamento**: Grid system responsivo
 - **Componentes**: Cards, modais, botões e formulários padronizados
-
-## 🔄 Funcionalidades Implementadas
-
-- [x] Busca por diferentes tipos de dados
-- [x] Exibição de resultados com filtros
-- [x] Modal de detalhes completo
-- [x] Histórico de pesquisas recentes
-- [x] Loading states e tratamento de erros
-- [x] Design responsivo
-- [x] Validação de formulários
-- [x] Busca parcial e inteligente
-
